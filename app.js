@@ -55,7 +55,7 @@ function setConnectionState(connected, name = "RIMAP OLED") {
 
   elements.oledDot.classList.toggle("online", connected);
   elements.oledStatus.textContent = connected
-    ? "Telefon bagli"
+    ? "Bilgisayar bagli"
     : "Baglanti bekleniyor";
 
   elements.connectButton.disabled = connected || !supportsWebBluetooth();
@@ -69,12 +69,18 @@ async function connectToDevice() {
   try {
     isConnecting = true;
     elements.connectButton.disabled = true;
-    elements.connectButton.textContent = "connecting...";
+    elements.connectButton.textContent = "scanning...";
 
-    appendLog("Scanning for RIMAP BLE devices...", "command");
+    appendLog("Opening Bluetooth device chooser...", "command");
+    appendLog(
+      "Select 'RIMAP OLED' from the list. Do not close the chooser.",
+      "dim"
+    );
 
+    // Filtre kaldırıldı. Böylece adı tarayıcı tarafından henüz
+    // okunamayan BLE cihazları da seçim penceresinde görünür.
     bluetoothDevice = await navigator.bluetooth.requestDevice({
-      filters: [{ namePrefix: "RIMAP" }],
+      acceptAllDevices: true,
       optionalServices: [SERVICE_UUID],
     });
 
@@ -83,15 +89,34 @@ async function connectToDevice() {
       handleDisconnected
     );
 
-    appendLog(`Device selected: ${bluetoothDevice.name || "unknown"}`, "success");
+    appendLog(
+      `Device selected: ${bluetoothDevice.name || "Unnamed BLE device"}`,
+      "success"
+    );
+
+    if (
+      bluetoothDevice.name &&
+      !bluetoothDevice.name.toUpperCase().includes("RIMAP")
+    ) {
+      appendLog(
+        "WARNING: Selected device name does not contain RIMAP.",
+        "error"
+      );
+    }
+
     appendLog("Opening GATT connection...", "command");
 
     gattServer = await bluetoothDevice.gatt.connect();
+
+    appendLog("Searching for RIMAP UART service...", "command");
+
     const service = await gattServer.getPrimaryService(SERVICE_UUID);
 
     rxCharacteristic = await service.getCharacteristic(
       RX_CHARACTERISTIC_UUID
     );
+
+    appendLog("RX characteristic found.", "success");
 
     try {
       txCharacteristic = await service.getCharacteristic(
@@ -99,6 +124,7 @@ async function connectToDevice() {
       );
 
       await txCharacteristic.startNotifications();
+
       txCharacteristic.addEventListener(
         "characteristicvaluechanged",
         handleNotification
@@ -110,16 +136,30 @@ async function connectToDevice() {
       appendLog("TX notification channel unavailable.", "dim");
     }
 
-    setConnectionState(true, bluetoothDevice.name);
+    setConnectionState(true, bluetoothDevice.name || "RIMAP OLED");
     appendLog("BLE connection established.", "success");
   } catch (error) {
-    if (error.name !== "NotFoundError") {
-      appendLog(readableBluetoothError(error), "error");
+    if (error.name === "NotFoundError") {
+      appendLog(
+        "Device chooser closed without selecting a device.",
+        "error"
+      );
+      appendLog(
+        "Keep ESP32 powered and select RIMAP OLED in the Bluetooth window.",
+        "dim"
+      );
     } else {
-      appendLog("Device selection cancelled.", "dim");
+      appendLog(readableBluetoothError(error), "error");
     }
+
+    if (bluetoothDevice?.gatt?.connected) {
+      bluetoothDevice.gatt.disconnect();
+    }
+
+    cleanupConnection();
   } finally {
     isConnecting = false;
+
     elements.connectButton.textContent = bluetoothDevice?.gatt?.connected
       ? "connected"
       : "connect --device RIMAP";
@@ -175,22 +215,19 @@ async function sendMessage() {
 
     const encoder = new TextEncoder();
     const payload = encoder.encode(message);
-    const chunkSize = 20;
 
-    for (let offset = 0; offset < payload.length; offset += chunkSize) {
-      const chunk = payload.slice(offset, offset + chunkSize);
-
-      if ("writeValueWithoutResponse" in rxCharacteristic) {
-        await rxCharacteristic.writeValueWithoutResponse(chunk);
-      } else {
-        await rxCharacteristic.writeValue(chunk);
-      }
-
-      await sleep(35);
+    // ESP32 kodundaki onWrite her BLE yazımını ayrı mesaj saydığı için
+    // mesajı tek işlemde gönderiyoruz. 120 karakter sınırı OLED için yeterli.
+    if ("writeValueWithResponse" in rxCharacteristic) {
+      await rxCharacteristic.writeValueWithResponse(payload);
+    } else {
+      await rxCharacteristic.writeValue(payload);
     }
 
     elements.oledPreview.textContent = message;
+
     addHistory(message);
+
     elements.messageInput.value = "";
     updateCounter();
 
@@ -214,7 +251,9 @@ function handleNotification(event) {
 
 function updateCounter() {
   const value = elements.messageInput.value;
-  elements.characterCount.textContent = String(value.length);
+  const byteLength = new TextEncoder().encode(value).length;
+
+  elements.characterCount.textContent = String(byteLength);
   elements.oledPreview.textContent =
     value || "Telefondan mesaj bekleniyor...";
 }
@@ -280,12 +319,15 @@ function readableBluetoothError(error) {
   const messages = {
     SecurityError:
       "ERROR: secure context required. Use HTTPS or localhost.",
-    NetworkError: "ERROR: GATT connection failed.",
-    InvalidStateError: "ERROR: Bluetooth state is invalid.",
-    NotSupportedError: "ERROR: Web Bluetooth is not supported.",
+    NetworkError:
+      "ERROR: GATT connection failed. Check that ESP32 is powered and not connected to another device.",
+    InvalidStateError:
+      "ERROR: Bluetooth state is invalid. Turn Bluetooth off and on.",
+    NotSupportedError:
+      "ERROR: Web Bluetooth is not supported by this browser.",
   };
 
-  return messages[error.name] || `ERROR: ${error.message}`;
+  return messages[error.name] || `ERROR: ${error.name}: ${error.message}`;
 }
 
 function escapeHtml(value) {
@@ -300,10 +342,6 @@ function escapeHtml(value) {
 
     return entities[character];
   });
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 elements.connectButton.addEventListener("click", connectToDevice);
@@ -334,7 +372,9 @@ window.addEventListener("beforeunload", () => {
 });
 
 const supported = supportsWebBluetooth();
+
 elements.browserWarning.hidden = supported;
+
 setConnectionState(false);
 elements.connectButton.disabled = !supported;
 updateCounter();
@@ -344,5 +384,10 @@ if (!supported) {
   appendLog(
     "WARNING: Web Bluetooth requires Chrome/Edge and HTTPS or localhost.",
     "error"
+  );
+} else {
+  appendLog(
+    "Bluetooth chooser will display all nearby BLE devices.",
+    "success"
   );
 }

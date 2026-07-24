@@ -1,49 +1,33 @@
-# RIMAP Terminal BLE
+# RIMAP Terminal BLE — Düzeltilmiş sürüm
 
-Terminal görünümünde Web Bluetooth arayüzü.
-
-## Dosyalar
-
-- `index.html`
-- `style.css`
-- `app.js`
+Bu sürüm cihaz adı filtresini kaldırır. Bağlan düğmesine basınca çevredeki
+BLE cihazları görünür. Listeden **RIMAP OLED** cihazını seç.
 
 ## Çalıştırma
 
-Arayüzü görmek için `index.html` dosyasını açabilirsin.
-
-BLE bağlantısının çalışması için klasörde terminal açıp:
-
 ```bash
+cd rimap-terminal-ble-fixed
 python3 -m http.server 8000
 ```
 
-komutunu çalıştır.
-
-Sonra Chrome veya Edge üzerinden:
+Chrome veya Edge:
 
 ```text
 http://localhost:8000
 ```
 
-adresini aç.
+## Bağlantıdan önce
 
-## ESP32 BLE UUID'leri
+1. ESP32 açık olmalı.
+2. OLED'de `Baglanti bekleniyor` yazmalı.
+3. ESP32 telefondaki nRF Connect uygulamasına bağlı olmamalı.
+4. Bilgisayarda Bluetooth açık olmalı.
+5. Tarayıcı cihaz penceresinde `RIMAP OLED` seçilmeli; pencere kapatılmamalı.
 
-Servis:
-
-```text
-6E400001-B5A3-F393-E0A9-E50E24DCCA9E
-```
-
-RX:
+`RIMAP OLED` görünmüyorsa ESP32'ye yüklenen BLE kodunun seri monitöründe:
 
 ```text
-6E400002-B5A3-F393-E0A9-E50E24DCCA9E
+RIMAP OLED BLE yayini basladi.
 ```
 
-TX:
-
-```text
-6E400003-B5A3-F393-E0A9-E50E24DCCA9E
-```
+mesajı görünmeli.
