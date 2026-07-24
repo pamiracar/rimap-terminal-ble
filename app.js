@@ -1,3 +1,5 @@
+const WEB_VERSION = "1.2.0";
+const EXPECTED_FIRMWARE_VERSION = "1.2.0";
 const SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 const RX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 const TX_CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
@@ -56,7 +58,7 @@ function setConnectionState(connected, name = "RIMAP OLED") {
 
   elements.oledDot.classList.toggle("online", connected);
   elements.oledStatus.textContent = connected
-    ? "Bilgisayar bagli"
+    ? "Cihaz bagli"
     : "Baglanti bekleniyor";
 
   elements.connectButton.disabled =
@@ -218,7 +220,7 @@ function disconnectDevice() {
 
 function handleDisconnected() {
   cleanupConnection();
-  appendLog("BLE connection closed.", "error");
+  appendLog("BLE connection closed. ESP32 should advertise again.", "error");
 }
 
 function cleanupConnection() {
@@ -287,7 +289,7 @@ function updateCounter() {
 
   elements.characterCount.textContent = String(byteLength);
   elements.oledPreview.textContent =
-    value || "Telefondan mesaj bekleniyor...";
+    value || "Cihazdan mesaj bekleniyor...";
 }
 
 function addHistory(message) {

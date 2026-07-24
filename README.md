@@ -1,11 +1,11 @@
-# RIMAP MESSAGE Terminal
+# RIMAP MESSAGE Web v1.2.0
 
-Gri tonlu terminal arayüzü ve geliştirilmiş Web Bluetooth tanılama sürümü.
+Firmware eşleşmesi: **RIMAP MESSAGE FW v1.2.0**
 
 ## Çalıştırma
 
 ```bash
-cd rimap-terminal-grey
+cd rimap-message-web-v1.2.0
 python3 -m http.server 8000
 ```
 
@@ -15,14 +15,13 @@ Chrome veya Edge:
 http://localhost:8000
 ```
 
-## macOS'ta seçici anında kapanıyorsa
+## Sürümler
 
-1. Sistem Ayarları'nı aç.
-2. Gizlilik ve Güvenlik bölümüne gir.
-3. Bluetooth'u aç.
-4. Google Chrome iznini etkinleştir.
-5. Chrome'u tamamen kapat: `Cmd + Q`
-6. Chrome'u yeniden aç.
-7. `http://localhost:8000` adresine tekrar gir.
+- Web: v1.2.0
+- Beklenen ESP32 firmware: v1.2.0
 
-Ayrıca ESP32 başka bir telefona veya uygulamaya bağlı olmamalı.
+## Bağlantı davranışı
+
+- Web sitesindeki `disconnect --force` düğmesi tarayıcının GATT bağlantısını kapatır.
+- ESP32 firmware, bağlantı kesilince OLED durumunu günceller.
+- ESP32 otomatik olarak tekrar reklam yayınına başlar ve başka cihazlardan seçilebilir olur.
