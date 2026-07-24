@@ -1,4 +1,4 @@
-# RIMAP Terminal Grey
+# RIMAP MESSAGE Terminal
 
 Gri tonlu terminal arayüzü ve geliştirilmiş Web Bluetooth tanılama sürümü.
 

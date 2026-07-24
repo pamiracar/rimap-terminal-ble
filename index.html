@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#020403" />
-  <meta name="description" content="RIMAP OS terminal BLE kontrol arayüzü" />
-  <title>RIMAP TERMINAL</title>
+  <meta name="description" content="RIMAP MESSAGE terminal BLE kontrol arayüzü" />
+  <title>RIMAP MESSAGE</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -17,7 +17,7 @@
       <div class="terminal-title">
         <span class="terminal-icon">></span>
         <div>
-          <strong>RIMAP TERMINAL</strong>
+          <strong>RIMAP MESSAGE</strong>
           <small>BLE MESSAGE CONSOLE</small>
         </div>
       </div>
@@ -40,7 +40,7 @@
       <div class="terminal-grid">
         <section class="console-panel">
           <div class="console-output" id="consoleOutput" aria-live="polite">
-            <div class="log-line dim">[BOOT] RIMAP OS terminal initialized.</div>
+            <div class="log-line dim">[BOOT] RIMAP MESSAGE terminal initialized.</div>
             <div class="log-line dim">[INFO] Web Bluetooth module ready.</div>
             <div class="log-line dim">[INFO] Waiting for ESP32 connection...</div>
           </div>
@@ -96,7 +96,7 @@
           <div class="panel-block">
             <div class="block-title">[ QUICK COMMANDS ]</div>
             <div class="quick-grid">
-              <button type="button" data-message="Selam kral! RIMAP OS calisiyor.">hello</button>
+              <button type="button" data-message="Merhaba! RIMAP MESSAGE calisiyor.">hello</button>
               <button type="button" data-message="Sistem aktif ve baglanti hazir.">status</button>
               <button type="button" data-message="Yeni mesaj alindi.">notify</button>
               <button type="button" data-message="Test basarili!">test</button>
@@ -133,7 +133,7 @@
     </section>
 
     <footer class="terminal-footer">
-      <span>RIMAP OS / BLE TERMINAL</span>
+      <span>RIMAP MESSAGE / BLE TERMINAL</span>
       <span>Made by Pamir</span>
     </footer>
   </main>
