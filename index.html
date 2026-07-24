@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#020403" />
+  <meta name="description" content="RIMAP OS terminal BLE kontrol arayüzü" />
+  <title>RIMAP TERMINAL</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <main class="terminal-shell">
+    <header class="terminal-header">
+      <div class="terminal-title">
+        <span class="terminal-icon">></span>
+        <div>
+          <strong>RIMAP TERMINAL</strong>
+          <small>BLE MESSAGE CONSOLE</small>
+        </div>
+      </div>
+
+      <div class="header-status" id="headerStatus" data-state="offline">
+        <span class="status-led"></span>
+        <span id="headerStatusText">OFFLINE</span>
+      </div>
+    </header>
+
+    <section class="terminal-window">
+      <div class="window-bar">
+        <div class="window-controls" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="window-path">root@rimap:/ble-console</div>
+        <div class="window-version">v1.0.0</div>
+      </div>
+
+      <div class="terminal-grid">
+        <section class="console-panel">
+          <div class="console-output" id="consoleOutput" aria-live="polite">
+            <div class="log-line dim">[BOOT] RIMAP OS terminal initialized.</div>
+            <div class="log-line dim">[INFO] Web Bluetooth module ready.</div>
+            <div class="log-line dim">[INFO] Waiting for ESP32 connection...</div>
+          </div>
+
+          <div class="command-area">
+            <div class="prompt-line">
+              <span class="prompt-user">root@rimap</span>
+              <span class="prompt-separator">:</span>
+              <span class="prompt-path">~/ble</span>
+              <span class="prompt-symbol">$</span>
+            </div>
+
+            <textarea
+              id="messageInput"
+              maxlength="120"
+              rows="3"
+              placeholder="Mesajını yaz..."
+              spellcheck="false"
+            ></textarea>
+
+            <div class="command-footer">
+              <span><strong id="characterCount">0</strong>/120 bytes</span>
+              <span>CTRL/⌘ + ENTER gönderir</span>
+            </div>
+          </div>
+        </section>
+
+        <aside class="system-panel">
+          <div class="panel-block">
+            <div class="block-title">[ DEVICE ]</div>
+            <dl class="system-list">
+              <div><dt>NAME</dt><dd id="deviceName">RIMAP OLED</dd></div>
+              <div><dt>STATE</dt><dd id="deviceState">IDLE</dd></div>
+              <div><dt>SERVICE</dt><dd>6E400001...</dd></div>
+              <div><dt>RX</dt><dd>6E400002...</dd></div>
+              <div><dt>TX</dt><dd>6E400003...</dd></div>
+            </dl>
+          </div>
+
+          <div class="panel-block">
+            <div class="block-title">[ ACTIONS ]</div>
+            <button class="terminal-button primary" id="connectButton" type="button">
+              connect --device RIMAP
+            </button>
+            <button class="terminal-button" id="disconnectButton" type="button" disabled>
+              disconnect --force
+            </button>
+            <button class="terminal-button success" id="sendButton" type="button" disabled>
+              send --oled
+            </button>
+          </div>
+
+          <div class="panel-block">
+            <div class="block-title">[ QUICK COMMANDS ]</div>
+            <div class="quick-grid">
+              <button type="button" data-message="Selam kral! RIMAP OS calisiyor.">hello</button>
+              <button type="button" data-message="Sistem aktif ve baglanti hazir.">status</button>
+              <button type="button" data-message="Yeni mesaj alindi.">notify</button>
+              <button type="button" data-message="Test basarili!">test</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="monitor-grid">
+      <article class="monitor-panel oled-monitor">
+        <div class="monitor-title">OLED PREVIEW</div>
+        <div class="oled-screen">
+          <div class="oled-header">
+            <span>RIMAP MESSAGE</span>
+            <span id="oledDot" class="oled-dot"></span>
+          </div>
+          <div class="oled-rule"></div>
+          <div class="oled-status" id="oledStatus">Baglanti bekleniyor</div>
+          <div class="oled-rule"></div>
+          <div class="oled-message" id="oledPreview">Telefondan mesaj bekleniyor...</div>
+        </div>
+      </article>
+
+      <article class="monitor-panel history-monitor">
+        <div class="monitor-head">
+          <div class="monitor-title">MESSAGE HISTORY</div>
+          <button id="clearHistoryButton" class="clear-button" type="button">clear</button>
+        </div>
+        <div id="historyList" class="history-list">
+          <div class="history-empty">no history found</div>
+        </div>
+      </article>
+    </section>
+
+    <footer class="terminal-footer">
+      <span>RIMAP OS / BLE TERMINAL</span>
+      <span>Made by Pamir</span>
+    </footer>
+  </main>
+
+  <div id="browserWarning" class="browser-warning" hidden>
+    Web Bluetooth kullanılamıyor. Chrome/Edge ve HTTPS veya localhost kullan.
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
