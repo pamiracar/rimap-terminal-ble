@@ -91,9 +91,6 @@ Bu iki bölüm ayrı ayrı sürümlenir.
 |---|---|
 | ESP32 | Klasik ESP32 geliştirme kartı |
 | SH1106 OLED | 128x64 I2C OLED ekran |
-| Jumper kablo | ESP32 ve OLED bağlantısı için |
-| USB kablosu | Kod yükleme ve güç için |
-| Bilgisayar veya telefon | Web arayüzüne erişmek için |
 
 ---
 
