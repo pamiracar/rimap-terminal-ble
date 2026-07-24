@@ -1,27 +1,29 @@
-# RIMAP MESSAGE Web v1.2.0
+# RIMAP MESSAGE Web v1.2.1
 
-Firmware eşleşmesi: **RIMAP MESSAGE FW v1.2.0**
+Bu sürümde site bağlantıyı kesmeden önce ESP32'ye:
+
+```text
+__RIMAP_DISCONNECT__
+```
+
+kontrol komutunu yollar.
+
+ESP32 bu komutu alınca:
+
+1. OLED'de `Baglanti kesildi` gösterir.
+2. İstemci bağlantısını ESP32 tarafından kapatır.
+3. BLE reklamını yeniden başlatır.
+4. Başka cihazların ESP32'yi seçebilmesini sağlar.
 
 ## Çalıştırma
 
 ```bash
-cd rimap-message-web-v1.2.0
+cd rimap-message-web-v1.2.1
 python3 -m http.server 8000
 ```
 
-Chrome veya Edge:
+Tarayıcı:
 
 ```text
 http://localhost:8000
 ```
-
-## Sürümler
-
-- Web: v1.2.0
-- Beklenen ESP32 firmware: v1.2.0
-
-## Bağlantı davranışı
-
-- Web sitesindeki `disconnect --force` düğmesi tarayıcının GATT bağlantısını kapatır.
-- ESP32 firmware, bağlantı kesilince OLED durumunu günceller.
-- ESP32 otomatik olarak tekrar reklam yayınına başlar ve başka cihazlardan seçilebilir olur.

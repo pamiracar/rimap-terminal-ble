@@ -1,8 +1,11 @@
-const WEB_VERSION = "1.2.0";
-const EXPECTED_FIRMWARE_VERSION = "1.2.0";
+const WEB_VERSION = "1.2.1";
+const EXPECTED_FIRMWARE_VERSION = "1.2.1";
+
 const SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 const RX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 const TX_CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+
+const DISCONNECT_COMMAND = "__RIMAP_DISCONNECT__";
 
 const elements = {
   connectButton: document.querySelector("#connectButton"),
@@ -27,12 +30,18 @@ let bluetoothDevice = null;
 let gattServer = null;
 let rxCharacteristic = null;
 let txCharacteristic = null;
+
 let isConnecting = false;
+let isDisconnecting = false;
 let bluetoothAvailable = false;
 let history = loadHistory();
 
 function supportsWebBluetooth() {
   return "bluetooth" in navigator && window.isSecureContext;
+}
+
+function sleep(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 function appendLog(message, type = "dim") {
@@ -50,10 +59,10 @@ function appendLog(message, type = "dim") {
   elements.consoleOutput.scrollTop = elements.consoleOutput.scrollHeight;
 }
 
-function setConnectionState(connected, name = "RIMAP OLED") {
+function setConnectionState(connected, name = "RIMAP MESSAGE") {
   elements.headerStatus.dataset.state = connected ? "online" : "offline";
   elements.headerStatusText.textContent = connected ? "ONLINE" : "OFFLINE";
-  elements.deviceName.textContent = name || "RIMAP OLED";
+  elements.deviceName.textContent = name || "RIMAP MESSAGE";
   elements.deviceState.textContent = connected ? "CONNECTED" : "IDLE";
 
   elements.oledDot.classList.toggle("online", connected);
@@ -62,20 +71,29 @@ function setConnectionState(connected, name = "RIMAP OLED") {
     : "Baglanti bekleniyor";
 
   elements.connectButton.disabled =
-    connected || !supportsWebBluetooth() || !bluetoothAvailable;
+    connected ||
+    isConnecting ||
+    isDisconnecting ||
+    !supportsWebBluetooth() ||
+    !bluetoothAvailable;
 
-  elements.disconnectButton.disabled = !connected;
-  elements.sendButton.disabled = !connected;
+  elements.disconnectButton.disabled =
+    !connected || isDisconnecting;
+
+  elements.sendButton.disabled =
+    !connected || isDisconnecting;
 }
 
 async function checkBluetoothAvailability() {
   if (!supportsWebBluetooth()) {
     bluetoothAvailable = false;
     elements.browserWarning.hidden = false;
+
     appendLog(
       "ERROR: Web Bluetooth requires Chrome/Edge and localhost or HTTPS.",
       "error"
     );
+
     setConnectionState(false);
     return;
   }
@@ -90,15 +108,12 @@ async function checkBluetoothAvailability() {
         "ERROR: Bluetooth adapter unavailable or browser permission denied.",
         "error"
       );
-      appendLog(
-        "macOS: System Settings > Privacy & Security > Bluetooth > enable Chrome.",
-        "dim"
-      );
     }
   } catch (error) {
     bluetoothAvailable = true;
+
     appendLog(
-      "Bluetooth availability could not be tested; connection can still be tried.",
+      "Bluetooth availability could not be tested.",
       "dim"
     );
   }
@@ -107,21 +122,26 @@ async function checkBluetoothAvailability() {
 }
 
 async function connectToDevice() {
-  if (isConnecting || !supportsWebBluetooth()) return;
+  if (
+    isConnecting ||
+    isDisconnecting ||
+    !supportsWebBluetooth()
+  ) {
+    return;
+  }
 
-  // Burada requestDevice çağrısından önce hiçbir await yok.
-  // Böylece tarayıcının kullanıcı tıklaması yetkisi kaybolmaz.
   try {
     isConnecting = true;
-    elements.connectButton.disabled = true;
+
     elements.connectButton.textContent = "opening chooser...";
+    setConnectionState(false);
 
     appendLog("Opening native Bluetooth chooser...", "command");
 
     bluetoothDevice = await navigator.bluetooth.requestDevice({
       filters: [
         { services: [SERVICE_UUID] },
-        { name: "RIMAP OLED" },
+        { name: "RIMAP MESSAGE" },
         { namePrefix: "RIMAP" },
       ],
       optionalServices: [SERVICE_UUID],
@@ -129,19 +149,23 @@ async function connectToDevice() {
 
     bluetoothDevice.addEventListener(
       "gattserverdisconnected",
-      handleDisconnected
+      handleGattDisconnected
     );
 
     appendLog(
-      `Device selected: ${bluetoothDevice.name || "RIMAP OLED"}`,
+      `Device selected: ${bluetoothDevice.name || "RIMAP MESSAGE"}`,
       "success"
     );
 
     appendLog("Opening GATT connection...", "command");
+
     gattServer = await bluetoothDevice.gatt.connect();
 
-    appendLog("Reading Nordic UART service...", "command");
-    const service = await gattServer.getPrimaryService(SERVICE_UUID);
+    appendLog("Reading RIMAP MESSAGE service...", "command");
+
+    const service = await gattServer.getPrimaryService(
+      SERVICE_UUID
+    );
 
     rxCharacteristic = await service.getCharacteristic(
       RX_CHARACTERISTIC_UUID
@@ -155,6 +179,7 @@ async function connectToDevice() {
       );
 
       await txCharacteristic.startNotifications();
+
       txCharacteristic.addEventListener(
         "characteristicvaluechanged",
         handleNotification
@@ -163,10 +188,18 @@ async function connectToDevice() {
       appendLog("TX notification characteristic ready.", "success");
     } catch (error) {
       txCharacteristic = null;
-      appendLog("TX notifications unavailable; sending still works.", "dim");
+
+      appendLog(
+        "TX notifications unavailable; sending still works.",
+        "dim"
+      );
     }
 
-    setConnectionState(true, bluetoothDevice.name || "RIMAP OLED");
+    setConnectionState(
+      true,
+      bluetoothDevice.name || "RIMAP MESSAGE"
+    );
+
     appendLog("BLE connection established.", "success");
   } catch (error) {
     handleConnectionError(error);
@@ -174,14 +207,15 @@ async function connectToDevice() {
   } finally {
     isConnecting = false;
 
-    elements.connectButton.textContent = bluetoothDevice?.gatt?.connected
-      ? "connected"
-      : "connect --device RIMAP";
+    elements.connectButton.textContent =
+      bluetoothDevice?.gatt?.connected
+        ? "connected"
+        : "connect --device RIMAP";
 
-    elements.connectButton.disabled =
-      Boolean(bluetoothDevice?.gatt?.connected) ||
-      !supportsWebBluetooth() ||
-      !bluetoothAvailable;
+    setConnectionState(
+      Boolean(bluetoothDevice?.gatt?.connected),
+      bluetoothDevice?.name || "RIMAP MESSAGE"
+    );
   }
 }
 
@@ -189,60 +223,169 @@ function handleConnectionError(error) {
   console.error(error);
 
   if (error.name === "NotFoundError") {
-    appendLog("ERROR: Bluetooth chooser returned no device.", "error");
     appendLog(
-      "The chooser closing instantly usually means Chrome lacks OS Bluetooth permission.",
+      "ERROR: Bluetooth chooser returned no device.",
       "error"
     );
-    appendLog(
-      "macOS: System Settings > Privacy & Security > Bluetooth > Google Chrome ON.",
-      "dim"
-    );
-    appendLog(
-      "Then fully quit Chrome, reopen it and reload localhost.",
-      "dim"
-    );
+
     return;
   }
 
-  appendLog(readableBluetoothError(error), "error");
+  appendLog(
+    readableBluetoothError(error),
+    "error"
+  );
 }
 
-function disconnectDevice() {
-  appendLog("Disconnect command executed.", "command");
-
-  if (bluetoothDevice?.gatt?.connected) {
-    bluetoothDevice.gatt.disconnect();
-  } else {
+async function disconnectDevice() {
+  if (
+    isDisconnecting ||
+    !bluetoothDevice?.gatt?.connected
+  ) {
     cleanupConnection();
+    return;
+  }
+
+  isDisconnecting = true;
+
+  elements.disconnectButton.textContent = "disconnecting...";
+  setConnectionState(true, bluetoothDevice.name);
+
+  appendLog(
+    "Sending disconnect command to ESP32...",
+    "command"
+  );
+
+  try {
+    if (rxCharacteristic) {
+      const commandData =
+        new TextEncoder().encode(DISCONNECT_COMMAND);
+
+      if ("writeValueWithResponse" in rxCharacteristic) {
+        await rxCharacteristic.writeValueWithResponse(
+          commandData
+        );
+      } else {
+        await rxCharacteristic.writeValue(
+          commandData
+        );
+      }
+
+      appendLog(
+        "ESP32 accepted disconnect command.",
+        "success"
+      );
+
+      // ESP32'nin OLED'i güncellemesi ve bağlantıyı
+      // kendi tarafından kapatması için süre tanınır.
+      await sleep(450);
+    }
+  } catch (error) {
+    appendLog(
+      `Disconnect command warning: ${error.message}`,
+      "dim"
+    );
+  }
+
+  try {
+    if (txCharacteristic) {
+      txCharacteristic.removeEventListener(
+        "characteristicvaluechanged",
+        handleNotification
+      );
+
+      try {
+        await txCharacteristic.stopNotifications();
+      } catch (error) {
+        // Bağlantı ESP32 tarafından kapanmış olabilir.
+      }
+    }
+  } finally {
+    if (bluetoothDevice?.gatt?.connected) {
+      bluetoothDevice.gatt.disconnect();
+    }
+
+    await sleep(100);
+
+    cleanupConnection();
+
+    appendLog(
+      "BLE connection fully closed.",
+      "success"
+    );
+
+    isDisconnecting = false;
+    elements.disconnectButton.textContent =
+      "disconnect --force";
+
+    setConnectionState(false);
   }
 }
 
-function handleDisconnected() {
+function handleGattDisconnected() {
+  if (!isDisconnecting) {
+    appendLog(
+      "BLE connection closed by device.",
+      "error"
+    );
+  }
+
   cleanupConnection();
-  appendLog("BLE connection closed. ESP32 should advertise again.", "error");
 }
 
 function cleanupConnection() {
+  if (txCharacteristic) {
+    txCharacteristic.removeEventListener(
+      "characteristicvaluechanged",
+      handleNotification
+    );
+  }
+
   rxCharacteristic = null;
   txCharacteristic = null;
   gattServer = null;
+
+  if (bluetoothDevice) {
+    bluetoothDevice.removeEventListener(
+      "gattserverdisconnected",
+      handleGattDisconnected
+    );
+  }
+
   bluetoothDevice = null;
+
+  elements.connectButton.textContent =
+    "connect --device RIMAP";
+
+  elements.disconnectButton.textContent =
+    "disconnect --force";
+
   setConnectionState(false);
-  elements.connectButton.textContent = "connect --device RIMAP";
 }
 
 async function sendMessage() {
-  const message = elements.messageInput.value.trim();
+  const message =
+    elements.messageInput.value.trim();
 
   if (!message) {
-    appendLog("ERROR: message buffer is empty.", "error");
+    appendLog(
+      "ERROR: message buffer is empty.",
+      "error"
+    );
+
     elements.messageInput.focus();
     return;
   }
 
-  if (!rxCharacteristic || !bluetoothDevice?.gatt?.connected) {
-    appendLog("ERROR: no active BLE connection.", "error");
+  if (
+    !rxCharacteristic ||
+    !bluetoothDevice?.gatt?.connected
+  ) {
+    appendLog(
+      "ERROR: no active BLE connection.",
+      "error"
+    );
+
     return;
   }
 
@@ -250,51 +393,86 @@ async function sendMessage() {
     elements.sendButton.disabled = true;
     elements.sendButton.textContent = "sending...";
 
-    const payload = new TextEncoder().encode(message);
+    const payload =
+      new TextEncoder().encode(message);
 
-    appendLog(`send --oled "${message}"`, "command");
+    appendLog(
+      `send --oled "${message}"`,
+      "command"
+    );
 
     if ("writeValueWithResponse" in rxCharacteristic) {
-      await rxCharacteristic.writeValueWithResponse(payload);
+      await rxCharacteristic.writeValueWithResponse(
+        payload
+      );
     } else {
-      await rxCharacteristic.writeValue(payload);
+      await rxCharacteristic.writeValue(
+        payload
+      );
     }
 
     elements.oledPreview.textContent = message;
+
     addHistory(message);
 
     elements.messageInput.value = "";
     updateCounter();
 
-    appendLog(`SUCCESS: ${payload.length} bytes transmitted.`, "success");
+    appendLog(
+      `SUCCESS: ${payload.length} bytes transmitted.`,
+      "success"
+    );
   } catch (error) {
-    appendLog(readableBluetoothError(error), "error");
+    appendLog(
+      readableBluetoothError(error),
+      "error"
+    );
   } finally {
-    elements.sendButton.disabled = !bluetoothDevice?.gatt?.connected;
-    elements.sendButton.textContent = "send --oled";
+    elements.sendButton.disabled =
+      !bluetoothDevice?.gatt?.connected ||
+      isDisconnecting;
+
+    elements.sendButton.textContent =
+      "send --oled";
   }
 }
 
 function handleNotification(event) {
-  const text = new TextDecoder("utf-8").decode(event.target.value);
+  const text =
+    new TextDecoder("utf-8").decode(
+      event.target.value
+    );
 
   if (text) {
-    appendLog(`ESP32: ${text}`, "success");
+    appendLog(
+      `ESP32: ${text}`,
+      "success"
+    );
   }
 }
 
 function updateCounter() {
-  const value = elements.messageInput.value;
-  const byteLength = new TextEncoder().encode(value).length;
+  const value =
+    elements.messageInput.value;
 
-  elements.characterCount.textContent = String(byteLength);
+  const byteLength =
+    new TextEncoder().encode(value).length;
+
+  elements.characterCount.textContent =
+    String(byteLength);
+
   elements.oledPreview.textContent =
     value || "Cihazdan mesaj bekleniyor...";
 }
 
 function addHistory(message) {
-  history.unshift({ message, timestamp: Date.now() });
+  history.unshift({
+    message,
+    timestamp: Date.now(),
+  });
+
   history = history.slice(0, 10);
+
   saveHistory();
   renderHistory();
 }
@@ -303,105 +481,176 @@ function renderHistory() {
   if (!history.length) {
     elements.historyList.innerHTML =
       '<div class="history-empty">no history found</div>';
+
     return;
   }
 
-  elements.historyList.innerHTML = history
-    .map((item) => {
-      const time = new Date(item.timestamp).toLocaleString("tr-TR", {
-        day: "2-digit",
-        month: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+  elements.historyList.innerHTML =
+    history
+      .map((item) => {
+        const time =
+          new Date(item.timestamp).toLocaleString(
+            "tr-TR",
+            {
+              day: "2-digit",
+              month: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            }
+          );
 
-      return `
-        <div class="history-item">
-          <div class="history-time">${time}</div>
-          <div class="history-message">${escapeHtml(item.message)}</div>
-        </div>
-      `;
-    })
-    .join("");
+        return `
+          <div class="history-item">
+            <div class="history-time">${time}</div>
+            <div class="history-message">${escapeHtml(item.message)}</div>
+          </div>
+        `;
+      })
+      .join("");
 }
 
 function clearHistory() {
   history = [];
+
   saveHistory();
   renderHistory();
-  appendLog("Message history cleared.", "dim");
+
+  appendLog(
+    "Message history cleared.",
+    "dim"
+  );
 }
 
 function loadHistory() {
   try {
-    const saved = localStorage.getItem("rimap-terminal-history");
-    return saved ? JSON.parse(saved) : [];
+    const saved =
+      localStorage.getItem(
+        "rimap-terminal-history"
+      );
+
+    return saved
+      ? JSON.parse(saved)
+      : [];
   } catch {
     return [];
   }
 }
 
 function saveHistory() {
-  localStorage.setItem("rimap-terminal-history", JSON.stringify(history));
+  localStorage.setItem(
+    "rimap-terminal-history",
+    JSON.stringify(history)
+  );
 }
 
 function readableBluetoothError(error) {
   const messages = {
     SecurityError:
       "ERROR: Bluetooth permission blocked or insecure page.",
+
     NetworkError:
-      "ERROR: GATT connection failed. ESP32 may be connected elsewhere.",
+      "ERROR: GATT connection failed.",
+
     InvalidStateError:
-      "ERROR: Bluetooth state invalid. Restart Bluetooth and Chrome.",
+      "ERROR: Bluetooth state invalid.",
+
     NotSupportedError:
       "ERROR: This browser does not support Web Bluetooth.",
   };
 
-  return messages[error.name] || `ERROR: ${error.name}: ${error.message}`;
+  return (
+    messages[error.name] ||
+    `ERROR: ${error.name}: ${error.message}`
+  );
 }
 
 function escapeHtml(value) {
-  return value.replace(/[&<>"']/g, (character) => {
-    const entities = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;",
-    };
+  return value.replace(
+    /[&<>"']/g,
+    (character) => {
+      const entities = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      };
 
-    return entities[character];
-  });
+      return entities[character];
+    }
+  );
 }
 
-elements.connectButton.addEventListener("click", connectToDevice);
-elements.disconnectButton.addEventListener("click", disconnectDevice);
-elements.sendButton.addEventListener("click", sendMessage);
-elements.clearHistoryButton.addEventListener("click", clearHistory);
-elements.messageInput.addEventListener("input", updateCounter);
+elements.connectButton.addEventListener(
+  "click",
+  connectToDevice
+);
 
-elements.messageInput.addEventListener("keydown", (event) => {
-  if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-    sendMessage();
+elements.disconnectButton.addEventListener(
+  "click",
+  disconnectDevice
+);
+
+elements.sendButton.addEventListener(
+  "click",
+  sendMessage
+);
+
+elements.clearHistoryButton.addEventListener(
+  "click",
+  clearHistory
+);
+
+elements.messageInput.addEventListener(
+  "input",
+  updateCounter
+);
+
+elements.messageInput.addEventListener(
+  "keydown",
+  (event) => {
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.key === "Enter"
+    ) {
+      sendMessage();
+    }
   }
-});
+);
 
-document.querySelectorAll("[data-message]").forEach((button) => {
-  button.addEventListener("click", () => {
-    elements.messageInput.value = button.dataset.message;
-    updateCounter();
-    appendLog(`Preset loaded: ${button.textContent}`, "dim");
-    elements.messageInput.focus();
+document
+  .querySelectorAll("[data-message]")
+  .forEach((button) => {
+    button.addEventListener(
+      "click",
+      () => {
+        elements.messageInput.value =
+          button.dataset.message;
+
+        updateCounter();
+
+        appendLog(
+          `Preset loaded: ${button.textContent}`,
+          "dim"
+        );
+
+        elements.messageInput.focus();
+      }
+    );
   });
-});
 
-window.addEventListener("beforeunload", () => {
-  if (bluetoothDevice?.gatt?.connected) {
-    bluetoothDevice.gatt.disconnect();
+window.addEventListener(
+  "beforeunload",
+  () => {
+    if (bluetoothDevice?.gatt?.connected) {
+      bluetoothDevice.gatt.disconnect();
+    }
   }
-});
+);
 
-elements.browserWarning.hidden = supportsWebBluetooth();
+elements.browserWarning.hidden =
+  supportsWebBluetooth();
+
 updateCounter();
 renderHistory();
 checkBluetoothAvailability();
