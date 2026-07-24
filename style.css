@@ -1,17 +1,17 @@
 :root {
   color-scheme: dark;
-  --bg: #020403;
-  --panel: #050a07;
-  --panel-2: #071009;
-  --line: rgba(100, 255, 153, 0.17);
-  --line-strong: rgba(100, 255, 153, 0.35);
-  --green: #64ff99;
-  --green-2: #39d975;
-  --green-dim: #4a8d63;
-  --text: #c7ffd9;
-  --muted: #6f9d7d;
-  --danger: #ff6f7d;
-  --warning: #ffd36a;
+  --bg: #090a0c;
+  --panel: #101216;
+  --panel-2: #15181d;
+  --line: rgba(210, 216, 226, 0.14);
+  --line-strong: rgba(225, 230, 238, 0.28);
+  --green: #e2e6ed;
+  --green-2: #bcc2cc;
+  --green-dim: #777e89;
+  --text: #eef0f4;
+  --muted: #888f99;
+  --danger: #ff7e8b;
+  --warning: #d6d9df;
   --mono: "JetBrains Mono", "Fira Code", Consolas, Monaco, monospace;
 }
 
@@ -29,7 +29,7 @@ body {
   margin: 0;
   overflow-x: hidden;
   background:
-    radial-gradient(circle at 50% 0%, rgba(60, 255, 130, 0.06), transparent 35%),
+    radial-gradient(circle at 50% 0%, rgba(220, 225, 235, 0.055), transparent 35%),
     #020403;
   color: var(--text);
   font-family: var(--mono);
@@ -97,9 +97,9 @@ textarea:focus-visible {
   height: 42px;
   place-items: center;
   border: 1px solid var(--line-strong);
-  background: rgba(100, 255, 153, 0.05);
+  background: rgba(220, 225, 235, 0.045);
   color: var(--green);
-  box-shadow: inset 0 0 20px rgba(100,255,153,.05);
+  box-shadow: inset 0 0 20px rgba(220,225,235,.045);
   font-size: 1.2rem;
 }
 
@@ -125,7 +125,7 @@ textarea:focus-visible {
   gap: 9px;
   padding: 9px 12px;
   border: 1px solid var(--line);
-  background: rgba(100,255,153,.03);
+  background: rgba(220,225,235,.025);
   color: var(--muted);
   font-size: 0.72rem;
 }
@@ -152,7 +152,7 @@ textarea:focus-visible {
   overflow: hidden;
   border: 1px solid var(--line-strong);
   background: rgba(3, 8, 5, 0.94);
-  box-shadow: 0 0 0 1px rgba(100,255,153,.03), 0 25px 90px rgba(0,0,0,.55);
+  box-shadow: 0 0 0 1px rgba(220,225,235,.025), 0 25px 90px rgba(0,0,0,.55);
 }
 
 .window-bar {
@@ -162,7 +162,7 @@ textarea:focus-visible {
   min-height: 44px;
   padding: 0 15px;
   border-bottom: 1px solid var(--line);
-  background: #071009;
+  background: #14171b;
   color: var(--muted);
   font-size: 0.72rem;
 }
@@ -183,11 +183,11 @@ textarea:focus-visible {
 }
 
 .window-controls span:nth-child(2) {
-  background: rgba(255, 211, 106, 0.4);
+  background: rgba(210, 216, 226, 0.32);
 }
 
 .window-controls span:nth-child(3) {
-  background: rgba(100, 255, 153, 0.4);
+  background: rgba(220, 225, 235, 0.4);
 }
 
 .window-path {
@@ -247,7 +247,7 @@ textarea:focus-visible {
 .command-area {
   border-top: 1px solid var(--line);
   padding: 18px 20px 20px;
-  background: #030704;
+  background: #0d0f12;
 }
 
 .prompt-line {
@@ -263,7 +263,7 @@ textarea:focus-visible {
 }
 
 .prompt-path {
-  color: #7bb8ff;
+  color: #b7bdc7;
 }
 
 .prompt-separator {
@@ -298,7 +298,7 @@ textarea::placeholder {
 
 .system-panel {
   padding: 18px;
-  background: rgba(7, 16, 9, 0.62);
+  background: rgba(20, 23, 28, 0.72);
 }
 
 .panel-block + .panel-block {
@@ -355,17 +355,17 @@ textarea::placeholder {
 
 .terminal-button:hover:not(:disabled) {
   border-color: var(--green);
-  background: rgba(100,255,153,.06);
+  background: rgba(220,225,235,.055);
   color: var(--green);
 }
 
 .terminal-button.primary {
-  border-color: rgba(123,184,255,.35);
-  color: #8ec2ff;
+  border-color: rgba(210,216,226,.25);
+  color: #d9dde4;
 }
 
 .terminal-button.success {
-  border-color: rgba(100,255,153,.35);
+  border-color: rgba(225,230,238,.28);
   color: var(--green);
 }
 
@@ -383,7 +383,7 @@ textarea::placeholder {
 .quick-grid button {
   min-height: 34px;
   border: 1px solid var(--line);
-  background: rgba(100,255,153,.025);
+  background: rgba(220,225,235,.025);
   color: var(--muted);
   cursor: pointer;
   font-size: .68rem;
@@ -403,7 +403,7 @@ textarea::placeholder {
 
 .monitor-panel {
   border: 1px solid var(--line);
-  background: rgba(5, 10, 7, 0.8);
+  background: rgba(16, 18, 22, 0.86);
   padding: 18px;
 }
 
@@ -519,8 +519,8 @@ textarea::placeholder {
   bottom: 18px;
   z-index: 80;
   max-width: 390px;
-  border: 1px solid rgba(255, 211, 106, .35);
-  background: #191404;
+  border: 1px solid rgba(210, 216, 226, .28);
+  background: #17181b;
   color: var(--warning);
   padding: 13px 15px;
   font-size: .72rem;

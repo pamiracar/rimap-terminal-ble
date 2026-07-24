@@ -1,12 +1,11 @@
-# RIMAP Terminal BLE — Düzeltilmiş sürüm
+# RIMAP Terminal Grey
 
-Bu sürüm cihaz adı filtresini kaldırır. Bağlan düğmesine basınca çevredeki
-BLE cihazları görünür. Listeden **RIMAP OLED** cihazını seç.
+Gri tonlu terminal arayüzü ve geliştirilmiş Web Bluetooth tanılama sürümü.
 
 ## Çalıştırma
 
 ```bash
-cd rimap-terminal-ble-fixed
+cd rimap-terminal-grey
 python3 -m http.server 8000
 ```
 
@@ -16,18 +15,14 @@ Chrome veya Edge:
 http://localhost:8000
 ```
 
-## Bağlantıdan önce
+## macOS'ta seçici anında kapanıyorsa
 
-1. ESP32 açık olmalı.
-2. OLED'de `Baglanti bekleniyor` yazmalı.
-3. ESP32 telefondaki nRF Connect uygulamasına bağlı olmamalı.
-4. Bilgisayarda Bluetooth açık olmalı.
-5. Tarayıcı cihaz penceresinde `RIMAP OLED` seçilmeli; pencere kapatılmamalı.
+1. Sistem Ayarları'nı aç.
+2. Gizlilik ve Güvenlik bölümüne gir.
+3. Bluetooth'u aç.
+4. Google Chrome iznini etkinleştir.
+5. Chrome'u tamamen kapat: `Cmd + Q`
+6. Chrome'u yeniden aç.
+7. `http://localhost:8000` adresine tekrar gir.
 
-`RIMAP OLED` görünmüyorsa ESP32'ye yüklenen BLE kodunun seri monitöründe:
-
-```text
-RIMAP OLED BLE yayini basladi.
-```
-
-mesajı görünmeli.
+Ayrıca ESP32 başka bir telefona veya uygulamaya bağlı olmamalı.
