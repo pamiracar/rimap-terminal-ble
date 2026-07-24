@@ -14,12 +14,12 @@
 
 <p align="center">
   <a href="https://rimapble.vercel.app">
-    <img src="https://img.shields.io/badge/Live_Demo-rimapble.vercel.app-d9d9d9?style=for-the-badge&logo=vercel&logoColor=000000" alt="RIMAP MESSAGE Live Demo">
+    <img src="https://img.shields.io/badge/Live_Console-rimapble.vercel.app-d9d9d9?style=for-the-badge&logo=vercel&logoColor=000000" alt="RIMAP MESSAGE Live Console">
   </a>
 </p>
 
 <p align="center">
-  <strong>Canlı uygulama:</strong>
+  <strong>Canlı console:</strong>
   <a href="https://rimapble.vercel.app">rimapble.vercel.app</a>
 </p>
 
@@ -89,11 +89,8 @@ Bu iki bölüm ayrı ayrı sürümlenir.
 
 | Donanım | Açıklama |
 |---|---|
-| ESP32 | Klasik ESP32 geliştirme kartı |
-| SH1106 OLED | 128x64 I2C OLED ekran |
-| Jumper kablo | ESP32 ve OLED bağlantısı için |
-| USB kablosu | Kod yükleme ve güç için |
-| Bilgisayar veya telefon | Web arayüzüne erişmek için |
+| ESP32 | Bluetooth Low Energy sunucusunu çalıştıran geliştirme kartı |
+| SH1106 OLED | Mesajları ve bağlantı durumunu gösteren 128x64 I2C ekran |
 
 ---
 
@@ -191,7 +188,7 @@ FW v1.2.2
 
 ---
 
-## Canlı Demo
+## Canlı Console
 
 RIMAP MESSAGE web arayüzünün yayınlanmış sürümüne doğrudan erişebilirsin:
 
@@ -200,22 +197,6 @@ RIMAP MESSAGE web arayüzünün yayınlanmış sürümüne doğrudan erişebilir
 Vercel üzerinden yayınlanan sürüm HTTPS kullandığı için Web Bluetooth için gerekli olan güvenli bağlantı şartını karşılar. Tarayıcıda uygulamayı açtıktan sonra `connect --device RIMAP` butonunu kullanarak ESP32'ye bağlanabilirsin.
 
 > Web Bluetooth desteği için Google Chrome veya Microsoft Edge kullanılması önerilir.
-
----
-
-## Web Arayüzünü Çalıştırma
-
-Web Bluetooth doğrudan `file://` üzerinden açılan sayfalarda düzgün çalışmayabilir. Projeyi `localhost` üzerinden çalıştır:
-
-```bash
-python3 -m http.server 8000
-```
-
-Ardından Chrome veya Edge üzerinden:
-
-```text
-http://localhost:8000
-```
 
 ---
 
@@ -374,38 +355,7 @@ Web: v1.2.1 → v1.2.2
 
 ---
 
-## Sürüm Geçmişi
-
-### Firmware v1.2.2
-
-- Bağlantı kesildiğinde son mesaj temizleniyor.
-- OLED mesaj alanı varsayılan metne dönüyor.
-- Firmware sürümü OLED alt kısmında gösteriliyor.
-
-### Firmware v1.2.1
-
-- Web arayüzünden özel bağlantı kesme komutu desteği eklendi.
-- Bağlantı kesildiğinde OLED durumu güncelleniyor.
-- BLE reklamının yeniden başlatılması iyileştirildi.
-
-### Firmware v1.2.0
-
-- Firmware sürüm sistemi eklendi.
-- OLED alt durum çubuğu eklendi.
-- Bağlantı durumları geliştirildi.
-
-### Web v1.2.1
-
-- ESP32'ye özel bağlantı kesme komutu gönderme eklendi.
-- Bağlantı temizleme akışı geliştirildi.
-- Web ve firmware sürüm bilgileri ayrıldı.
-
-### Web v1.2.0
-
-- Gri tonlu terminal tasarımı eklendi.
-- Cihaz bilgileri paneli geliştirildi.
-- Mesaj geçmişi ve OLED ön izlemesi eklendi.
-
+## Sorun Giderme
 ---
 
 ## Sorun Giderme
@@ -413,7 +363,7 @@ Web: v1.2.1 → v1.2.2
 ### Bluetooth seçici açılmıyor
 
 - Chrome veya Edge kullan.
-- Sayfayı `localhost` üzerinden aç.
+- Canlı uygulamayı [rimapble.vercel.app](https://rimapble.vercel.app) adresinden aç.
 - Bilgisayar Bluetooth'unu etkinleştir.
 - Tarayıcı Bluetooth iznini kontrol et.
 - ESP32'nin başka bir cihaza bağlı olmadığından emin ol.
